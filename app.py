@@ -23,7 +23,6 @@ if not st.user.is_logged_in:
     st.button(
         "Continue with Google",
         on_click=st.login,
-        args=["google"],
         type="primary"
     )
 
