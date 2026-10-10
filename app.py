@@ -195,29 +195,25 @@ with tab_board:
     if entries.empty:
         st.write("No teams yet. Be the first to pick your XI.")
     elif not pts or all(v == 0 for v in pts.values()):
-    latest = entries.sort_values("time").drop_duplicates(
-        "user_id", keep="last"
-    )
-    st.write(
-        f"{len(latest)} teams entered. Scores appear after the match."
-    )
-else:
-    entries = entries.copy()
-    entries = entries.sort_values("time").drop_duplicates(
-        "user_id", keep="last"
-    )
+      latest = entries.sort_values("time").drop_duplicates(
+        "user_id", keep="last")
+      st.write(
+        f"{len(latest)} teams entered. Scores appear after the match.")
+    else:
+      entries = entries.copy()
+      entries = entries.sort_values("time").drop_duplicates(
+        "user_id", keep="last")
 
-    entries["points"] = [
+      entries["points"] = [
         entry_total(str(p).split("|"), c, pts)
-        for p, c in zip(entries["players"], entries["captain"])
-    ]
+        for p, c in zip(entries["players"], entries["captain"])]
 
-    board = entries.sort_values(
+      board = entries.sort_values(
         "points", ascending=False
-    )[["username", "captain", "points"]]
+        )[["username", "captain", "points"]]
 
-    board.insert(0, "rank", range(1, len(board) + 1))
-    st.dataframe(board, hide_index=True, use_container_width=True)
+      board.insert(0, "rank", range(1, len(board) + 1))
+      st.dataframe(board, hide_index=True, use_container_width=True)
 
 # ===== ADMIN =====
 with tab_admin:
