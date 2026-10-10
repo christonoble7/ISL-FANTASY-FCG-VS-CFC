@@ -63,6 +63,7 @@ def get_sheet():
         import gspread
         gc = gspread.service_account_from_dict(dict(sa))
         sheet = gc.open_by_key(sid)
+        st.success(f"Connected to Google Sheet: {sheet.title}")
         return sheet
     except Exception as e:
         st.error(f"Google Sheets connection error: {type(e).__name__}: {e}")
