@@ -220,7 +220,6 @@ yellow card -1, red card -3, own goal -2, played 60+ minutes +2
         if datetime.now(IST) >= DEADLINE:  # re-check so a late click can't slip through
             st.error("Entries just closed.")
         else:
-                    else:
             save_entry([
                 datetime.now(IST).isoformat(timespec="seconds"),
                 user_id,
