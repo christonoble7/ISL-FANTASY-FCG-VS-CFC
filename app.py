@@ -15,6 +15,23 @@ ENTRY_COLS = ["time", "handle", "captain", "cost", "players"]
 ENTRIES_CSV, STATS_CSV = Path("entries.csv"), Path("stats.csv")
 
 st.set_page_config(page_title="ISL Fantasy: Goa vs Chennaiyin", page_icon="⚽", layout="centered")
+# ---------- Google Login ----------
+if not st.user.is_logged_in:
+    st.title("⚽ ISL Fantasy")
+    st.write("Sign in with Google to continue.")
+
+    st.button(
+        "Continue with Google",
+        on_click=st.login,
+        args=["google"],
+        type="primary"
+    )
+
+    st.stop()
+
+# Authenticated user's identity
+user_email = st.user.email
+user_name = st.user.name
 st.markdown(CSS, unsafe_allow_html=True)
 
 
