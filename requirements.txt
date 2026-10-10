@@ -1,4 +1,5 @@
-streamlit>=1.36
+streamlit>=1.42.0
 pandas
 gspread
 tzdata
+Authlib>=1.3.2
