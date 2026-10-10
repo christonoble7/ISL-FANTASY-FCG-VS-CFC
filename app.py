@@ -146,15 +146,38 @@ def load_entries() -> pd.DataFrame:
 
 
 
+
 def save_entry(row: list):
-    if get_sheet():
-        ws = _ws("entries")
-        if not ws.get_all_values():
-            ws.append_row(ENTRY_COLS)
-        ws.append_row(row)
-    else:
-        df = pd.DataFrame([row], columns=ENTRY_COLS)
-        df.to_csv(ENTRIES_CSV, mode="a", header=not ENTRIES_CSV.exists(), index=False)
+    try:
+        sh = get_sheet()
+
+        if sh is not None:
+            ws = _ws("entries")
+
+            if not ws.get_all_values():
+                ws.append_row(ENTRY_COLS)
+
+            ws.append_row(row, value_input_option="USER_ENTERED")
+
+            # Verify that the row was saved
+            st.success(
+                f"Saved to Google Sheets! "
+                f"Rows in entries tab: {len(ws.get_all_values())}"
+            )
+        else:
+            st.error("Google Sheets connection is None; saving to local CSV.")
+            df = pd.DataFrame([row], columns=ENTRY_COLS)
+            df.to_csv(
+                ENTRIES_CSV,
+                mode="a",
+                header=not ENTRIES_CSV.exists(),
+                index=False
+            )
+
+    except Exception as e:
+        st.error(f"Failed to save team: {type(e).__name__}: {e}")
+        raise
+
 
 
 def default_stats() -> pd.DataFrame:
