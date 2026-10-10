@@ -11,7 +11,7 @@ from ui import CSS, chips_html, hero_html, pitch_html, tiles_html
 
 IST = ZoneInfo("Asia/Kolkata")
 DEADLINE = datetime(2026, 10, 10, 19, 25, tzinfo=IST)  # entries close 5 min before kickoff
-ENTRY_COLS = ["time", "handle", "captain", "cost", "players"]
+ENTRY_COLS = ["time", "user_id", "username", "captain", "cost", "players"]
 ENTRIES_CSV, STATS_CSV = Path("entries.csv"), Path("stats.csv")
 
 st.set_page_config(page_title="ISL Fantasy: Goa vs Chennaiyin", page_icon="⚽", layout="centered")
@@ -29,8 +29,8 @@ if not st.user.is_logged_in:
     st.stop()
 
 # Authenticated user's identity
-user_email = st.user.email
-user_name = st.user.name
+user_id = st.user.sub
+user_name = st.user.name or "Fantasy Player"
 st.markdown(CSS, unsafe_allow_html=True)
 
 
@@ -142,8 +142,6 @@ yellow card -1, red card -3, own goal -2, played 60+ minutes +2
 """
         )
 
-    handle = st.text_input("Your Twitter/X handle", placeholder="@yourhandle")
-
     label_to_player, picked = {}, []
     for pos, title in [("GK", "Goalkeeper (pick 1)"), ("DEF", "Defenders (3 to 5)"),
                        ("MID", "Midfielders (2 to 5)"), ("FWD", "Forwards (1 to 3)")]:
@@ -171,21 +169,21 @@ yellow card -1, red card -3, own goal -2, played 60+ minutes +2
     checks = validate(chosen, captain)
     st.markdown(chips_html(checks), unsafe_allow_html=True)
 
-    handle_ok = handle.strip() not in ("", "@")
-    if not handle_ok:
-        st.caption("Add your handle to submit.")
-    all_ok = all(ok for ok, _ in checks) and handle_ok
+    all_ok = all(ok for ok, _ in checks)
 
     if st.button("Lock in my team", type="primary", disabled=closed or not all_ok):
         if datetime.now(IST) >= DEADLINE:  # re-check so a late click can't slip through
             st.error("Entries just closed.")
         else:
-            h = handle.strip()
-            h = h if h.startswith("@") else "@" + h
-            save_entry([datetime.now(IST).isoformat(timespec="seconds"), h, captain,
-                        round(spent, 1), "|".join(picked)])
-            st.success(f"Team locked in for {h}. You can resubmit before the deadline to change it.")
-            st.balloons()
+            save_entry([datetime.now(IST).isoformat(timespec="seconds"),user_id,user_name,captain,round(spent, 1),
+    "|".join(picked)
+])
+
+st.success(
+    f"Team locked in for {user_name}. "
+    "You can resubmit before the deadline to change it."
+)
+st.balloons()
 
 # ===== LEADERBOARD =====
 with tab_board:
@@ -197,16 +195,29 @@ with tab_board:
     if entries.empty:
         st.write("No teams yet. Be the first to pick your XI.")
     elif not pts or all(v == 0 for v in pts.values()):
-        st.write(f"{entries['handle'].str.lower().nunique()} teams entered. Scores appear after the match.")
-    else:
-        entries = entries.copy()
-        entries["key"] = entries["handle"].str.lower()
-        entries = entries.sort_values("time").drop_duplicates("key", keep="last")  # latest entry counts
-        entries["points"] = [entry_total(str(p).split("|"), c, pts)
-                             for p, c in zip(entries["players"], entries["captain"])]
-        board = entries.sort_values("points", ascending=False)[["handle", "captain", "points"]]
-        board.insert(0, "rank", range(1, len(board) + 1))
-        st.dataframe(board, hide_index=True, use_container_width=True)
+    latest = entries.sort_values("time").drop_duplicates(
+        "user_id", keep="last"
+    )
+    st.write(
+        f"{len(latest)} teams entered. Scores appear after the match."
+    )
+else:
+    entries = entries.copy()
+    entries = entries.sort_values("time").drop_duplicates(
+        "user_id", keep="last"
+    )
+
+    entries["points"] = [
+        entry_total(str(p).split("|"), c, pts)
+        for p, c in zip(entries["players"], entries["captain"])
+    ]
+
+    board = entries.sort_values(
+        "points", ascending=False
+    )[["username", "captain", "points"]]
+
+    board.insert(0, "rank", range(1, len(board) + 1))
+    st.dataframe(board, hide_index=True, use_container_width=True)
 
 # ===== ADMIN =====
 with tab_admin:
