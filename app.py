@@ -37,10 +37,11 @@ st.markdown(CSS, unsafe_allow_html=True)
 
 # ---------- storage: Google Sheets if configured, else local CSV ----------
 def _secret(key, default=None):
-    """Read a Streamlit secret; returns default if there is no secrets file."""
     try:
-        return st.secrets[key]
-    except Exception:
+        value = st.secrets[key]
+        return value
+    except Exception as e:
+        st.error(f"Secret lookup failed for '{key}': {type(e).__name__}: {e}")
         return default
 
 
