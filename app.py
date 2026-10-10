@@ -55,22 +55,20 @@ def get_sheet():
     return None
 
 
-# Temporary Google Sheets connection diagnostic
+# Temporary diagnostic — does not reveal secret values
 try:
-    test_sheet = get_sheet()
-    if test_sheet is None:
-        st.error(
-            "Google Sheets is NOT configured. "
-            "The app is using local CSV storage."
-        )
-    else:
-        st.success(
-            f"Google Sheets connected successfully: {test_sheet.title}"
-        )
-except Exception as e:
-    st.error(
-        f"Google Sheets connection failed: {type(e).__name__}: {e}"
+    st.write("sheet_id exists:", bool(_secret("sheet_id")))
+    st.write(
+        "gcp_service_account exists:",
+        bool(_secret("gcp_service_account"))
     )
+    st.write(
+        "Service account has client_email:",
+        bool(_secret("gcp_service_account", {}).get("client_email"))
+    )
+except Exception as e:
+    st.error(f"Diagnostic error: {type(e).__name__}: {e}")
+
 
 
 def _ws(name):
