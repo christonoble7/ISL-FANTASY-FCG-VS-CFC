@@ -1,3 +1,4 @@
+import csv
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -61,11 +62,55 @@ def _ws(name):
         return sh.add_worksheet(title=name, rows=500, cols=12)
 
 
+
 def load_entries() -> pd.DataFrame:
     if get_sheet():
         rows = _ws("entries").get_all_records()
-        return pd.DataFrame(rows, columns=ENTRY_COLS) if rows else pd.DataFrame(columns=ENTRY_COLS)
-    return pd.read_csv(ENTRIES_CSV) if ENTRIES_CSV.exists() else pd.DataFrame(columns=ENTRY_COLS)
+        return (
+            pd.DataFrame(rows, columns=ENTRY_COLS)
+            if rows
+            else pd.DataFrame(columns=ENTRY_COLS)
+        )
+
+    if not ENTRIES_CSV.exists():
+        return pd.DataFrame(columns=ENTRY_COLS)
+
+    with open(ENTRIES_CSV, "r", newline="", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        columns = next(reader, None)
+
+        if not columns:
+            return pd.DataFrame(columns=ENTRY_COLS)
+
+        rows = []
+        for row in reader:
+            if len(row) > len(columns):
+                row = row[:len(columns) - 1] + [
+                    ",".join(row[len(columns) - 1:])
+                ]
+            elif len(row) < len(columns):
+                row += [""] * (len(columns) - len(row))
+
+            rows.append(row)
+
+    df = pd.DataFrame(rows, columns=columns)
+
+    # Convert the old handle column to the displayed username.
+    if "handle" in df.columns and "username" not in df.columns:
+        df = df.rename(columns={"handle": "username"})
+
+    # Old entries have no Google account ID, so keep them as legacy entries.
+    if "user_id" not in df.columns:
+        df["user_id"] = [
+            f"legacy-{i + 1}" for i in range(len(df))
+        ]
+
+    for col in ENTRY_COLS:
+        if col not in df.columns:
+            df[col] = ""
+
+    return df[ENTRY_COLS]
+
 
 
 def save_entry(row: list):
@@ -175,15 +220,18 @@ yellow card -1, red card -3, own goal -2, played 60+ minutes +2
         if datetime.now(IST) >= DEADLINE:  # re-check so a late click can't slip through
             st.error("Entries just closed.")
         else:
-            save_entry([datetime.now(IST).isoformat(timespec="seconds"),user_id,user_name,captain,round(spent, 1),
-    "|".join(picked)
-])
+                    else:
+            save_entry([
+                datetime.now(IST).isoformat(timespec="seconds"),
+                user_id,
+                user_name,
+                captain,
+                round(spent, 1),
+                "|".join(picked)
+            ])
 
-st.success(
-    f"Team locked in for {user_name}. "
-    "You can resubmit before the deadline to change it."
-)
-st.balloons()
+            st.success(f"Team locked in for {user_name}.")
+            st.balloons()
 
 # ===== LEADERBOARD =====
 with tab_board:
