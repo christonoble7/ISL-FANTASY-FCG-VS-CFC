@@ -45,14 +45,29 @@ def _secret(key, default=None):
         return default
 
 
+
 @st.cache_resource
 def get_sheet():
-    sa, sid = _secret("gcp_service_account"), _secret("sheet_id")
-    if sa and sid:
+    sa = _secret("gcp_service_account")
+    sid = _secret("sheet_id")
+
+    if not sa:
+        st.error("Missing gcp_service_account secret")
+        return None
+
+    if not sid:
+        st.error("Missing sheet_id secret")
+        return None
+
+    try:
         import gspread
         gc = gspread.service_account_from_dict(dict(sa))
-        return gc.open_by_key(sid)
-    return None
+        sheet = gc.open_by_key(sid)
+        return sheet
+    except Exception as e:
+        st.error(f"Google Sheets connection error: {type(e).__name__}: {e}")
+        return None
+
 
 
 # Temporary diagnostic — does not reveal secret values
